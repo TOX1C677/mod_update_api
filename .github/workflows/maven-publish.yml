@@ -3,7 +3,7 @@ name: Deploy Jumpie API
 on:
   push:
     branches:
-      - main  # ← поменяй, если деплой из другой ветки
+      - main  # Измени при необходимости
 
 jobs:
   deploy:
@@ -33,7 +33,7 @@ jobs:
           target: "/home/tox1c/jumpie-client"
           strip_components: 0
 
-      - name: Restart API on server via SSH
+      - name: Restart systemd service on server
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 84.21.166.182
@@ -41,6 +41,6 @@ jobs:
           username: tox1c
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            pkill -f 'java -jar' || true
-            cd /home/tox1c/jumpie-client
-            nohup java -jar *.jar > output.log 2>&1 &
+            sudo systemctl daemon-reload
+            sudo systemctl restart jumpie
+            sudo systemctl status jumpie --no-pager
