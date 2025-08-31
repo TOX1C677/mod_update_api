@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 @RequestMapping("/api")
 public class FileController {
 
-    @Value("${file.base-dir:/uploads}")
+    @Value("${file.base-dir}")
     private String baseDir;
 
     @GetMapping("/file")

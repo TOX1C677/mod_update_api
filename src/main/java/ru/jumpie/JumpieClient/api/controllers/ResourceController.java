@@ -22,7 +22,7 @@ public class ResourceController {
 
     private final FileSystemService fileSystemService;
 
-    @Value("${file.base-dir:/uploads}")
+    @Value("${file.base-dir}")
     private String baseDir;
 
     private Map<String, Resource> resourcesMap = new HashMap<>();
