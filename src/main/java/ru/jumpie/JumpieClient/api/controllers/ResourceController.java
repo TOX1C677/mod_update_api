@@ -23,8 +23,10 @@ public class ResourceController {
 
     private final FileSystemService fileSystemService;
 
-    @Value("${file.base-dir}")
-    private String baseDir;
+//    @Value("${file.base-dir}")
+//    private String baseDir;
+//я устал с ним бороться, потом поменяю
+    private String baseDir = "/home/tox1c/jumpie-files";
 
     @GetMapping("/resources")
     public List<Resource> getAvailableResources() {

@@ -16,8 +16,10 @@ import java.nio.file.Paths;
 @RequestMapping("/api")
 public class FileController {
 
-    @Value("${file.base-dir}")
-    private String baseDir;
+//    @Value("${file.base-dir}")
+//    private String baseDir;
+    //я устал с ним бороться, потом поменяю
+    private String baseDir = "/home/tox1c/jumpie-files";
 
     @GetMapping("/file")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
