@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api")
@@ -136,5 +137,40 @@ public class ResourceController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping("/debug")
+    public String debug() {
+        Path basePath = Paths.get(baseDir);
+        Path currentPath = Paths.get(".");
+
+        StringBuilder debugInfo = new StringBuilder();
+        debugInfo.append("Base dir from properties: ").append(baseDir).append("\n");
+        debugInfo.append("Absolute base path: ").append(basePath.toAbsolutePath()).append("\n");
+        debugInfo.append("Current working dir: ").append(currentPath.toAbsolutePath()).append("\n");
+        debugInfo.append("Base path exists: ").append(Files.exists(basePath)).append("\n");
+        debugInfo.append("Is directory: ").append(Files.isDirectory(basePath)).append("\n");
+
+        // Попробуем создать директорию
+        try {
+            Files.createDirectories(basePath);
+            debugInfo.append("Directory created successfully\n");
+        } catch (IOException e) {
+            debugInfo.append("Error creating directory: ").append(e.getMessage()).append("\n");
+        }
+
+        // Посмотрим что в директории
+        try {
+            if (Files.exists(basePath)) {
+                debugInfo.append("Contents of ").append(basePath).append(":\n");
+                try (Stream<Path> paths = Files.list(basePath)) {
+                    paths.forEach(path -> debugInfo.append("  - ").append(path.getFileName()).append("\n"));
+                }
+            }
+        } catch (IOException e) {
+            debugInfo.append("Error listing directory: ").append(e.getMessage()).append("\n");
+        }
+
+        return debugInfo.toString();
     }
 }
