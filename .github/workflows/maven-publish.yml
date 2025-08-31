@@ -3,7 +3,7 @@ name: Deploy Jumpie API
 on:
   push:
     branches:
-      - main  # Измени при необходимости
+      - main
 
 jobs:
   deploy:
@@ -33,7 +33,7 @@ jobs:
           target: "/home/tox1c/jumpie-client"
           strip_components: 0
 
-      - name: Restart systemd service on server
+      - name: Restart systemd service
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: 84.21.166.182
@@ -43,4 +43,13 @@ jobs:
           script: |
             sudo systemctl daemon-reload
             sudo systemctl restart jumpie
-            sudo systemctl status jumpie --no-pager
+
+      - name: Show last 200 lines of logs
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: 84.21.166.182
+          port: 2222
+          username: tox1c
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo journalctl -u jumpie -n 200 --no-pager
