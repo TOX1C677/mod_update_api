@@ -52,4 +52,4 @@ jobs:
           username: tox1c
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo journalctl -u jumpie -n 200 --no-pager
+            sudo journalctl -u jumpie -n 2000 --no-pager
