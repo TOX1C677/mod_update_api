@@ -29,7 +29,15 @@ public class ResourceController {
 
     @GetMapping("/resources")
     public List<Resource> getAvailableResources() {
-        // Если resourcesMap пустой, инициализируем его
+        try {
+            if (!fileSystemService.directoryExists(baseDir)) {
+                // Создаем базовую директорию если не существует
+                Files.createDirectories(Paths.get(baseDir));
+            }
+        } catch (IOException e) {
+            // Логируем ошибку
+        }
+
         if (resourcesMap.isEmpty()) {
             initializeResources();
         }
@@ -63,30 +71,30 @@ public class ResourceController {
 
     private void initializeResources() {
         try {
-            // Сканируем базовую директорию и создаем ресурсы
-            List<Path> files = fileSystemService.listFilesInDirectory(baseDir);
+            resourcesMap.clear(); // Очищаем старые ресурсы
 
-            for (Path file : files) {
+            // Сканируем базовую директорию
+            List<Path> items = fileSystemService.listFilesInDirectory(baseDir);
+
+            for (Path item : items) {
                 Resource resource = new Resource();
-                resource.setId("file_" + UUID.randomUUID());
-                resource.setName(file.getFileName().toString());
-                resource.setType("file");
-                resource.setPath(file.toString());
-                resource.setSize(fileSystemService.getFileSize(file));
+                resource.setId("item_" + UUID.randomUUID().toString());
+                resource.setName(item.getFileName().toString());
+                resource.setPath(item.toString());
+
+                if (Files.isDirectory(item)) {
+                    resource.setType("folder");
+                    resource.setSize(0);
+                } else {
+                    resource.setType("file");
+                    resource.setSize(fileSystemService.getFileSize(item));
+                }
+
                 resourcesMap.put(resource.getId(), resource);
             }
 
-            // Можно добавить логику для сканирования папок
-            Resource testFolder = new Resource();
-            testFolder.setId("folder_test");
-            testFolder.setName("Test Folder");
-            testFolder.setType("folder");
-            testFolder.setPath(baseDir + "/test-folder");
-            testFolder.setSize(0);
-            resourcesMap.put(testFolder.getId(), testFolder);
-
         } catch (IOException e) {
-            // Fallback to test data if directory scanning fails
+            // Fallback to test data
             createTestResources();
         }
     }

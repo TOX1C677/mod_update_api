@@ -13,11 +13,19 @@ import java.util.stream.Stream;
 public class FileSystemService {
 
     public List<Path> listFilesInDirectory(String directoryPath) throws IOException {
-        List<Path> files = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
-            paths.filter(Files::isRegularFile).forEach(files::add);
+        List<Path> items = new ArrayList<>();
+        Path dir = Paths.get(directoryPath);
+
+        if (!Files.exists(dir) || !Files.isDirectory(dir)) {
+            return items;
         }
-        return files;
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path path : stream) {
+                items.add(path);
+            }
+        }
+        return items;
     }
 
     public String calculateFileHash(Path filePath) throws IOException {
@@ -40,5 +48,10 @@ public class FileSystemService {
 
     public long getFileSize(Path filePath) throws IOException {
         return Files.size(filePath);
+    }
+
+    public boolean directoryExists(String directoryPath) {
+        return Files.exists(Paths.get(directoryPath)) &&
+                Files.isDirectory(Paths.get(directoryPath));
     }
 }
