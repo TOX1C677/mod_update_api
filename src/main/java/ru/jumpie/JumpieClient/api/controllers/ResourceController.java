@@ -23,9 +23,11 @@ public class ResourceController {
 
     private final FileSystemService fileSystemService;
 
-    // Жестко заданный путь
     private static final String BASE_DIR = "/home/tox1c/jumpie-files";
     private Map<String, Resource> resourcesMap = new HashMap<>();
+
+    // Добавьте это поле для стабильных ID
+    private Map<String, String> stableResourceIds = new HashMap<>();
 
     @GetMapping("/resources")
     public List<Resource> getAvailableResources() {
@@ -34,40 +36,48 @@ public class ResourceController {
     }
 
     private void initializeResources() {
-        resourcesMap.clear();
+        // Не очищаем resourcesMap полностью, только обновляем существующие
+        Map<String, Resource> newResourcesMap = new HashMap<>();
 
         try {
             System.out.println("Scanning directory: " + BASE_DIR);
             Path baseDirPath = Paths.get(BASE_DIR);
 
-            // Проверяем существование и доступность базовой директории
             if (!Files.exists(baseDirPath)) {
                 Files.createDirectories(baseDirPath);
                 System.out.println("Created base directory: " + BASE_DIR);
             }
 
-            // Проверяем права на чтение
             if (!Files.isReadable(baseDirPath)) {
                 System.err.println("No read permission for directory: " + BASE_DIR);
                 createTestResources();
                 return;
             }
 
-            // Сканируем базовую директорию
             List<Path> items = fileSystemService.listFilesInDirectory(BASE_DIR);
 
             for (Path item : items) {
                 try {
-                    // Проверяем доступность файла/папки
                     if (!Files.isReadable(item)) {
                         System.err.println("Skipping inaccessible item: " + item);
                         continue;
                     }
 
+                    String itemPath = item.toString();
+                    String resourceId;
+
+                    // Используем стабильный ID на основе пути файла
+                    if (stableResourceIds.containsKey(itemPath)) {
+                        resourceId = stableResourceIds.get(itemPath);
+                    } else {
+                        resourceId = "item_" + UUID.randomUUID().toString();
+                        stableResourceIds.put(itemPath, resourceId);
+                    }
+
                     Resource resource = new Resource();
-                    resource.setId("item_" + UUID.randomUUID().toString());
+                    resource.setId(resourceId);
                     resource.setName(item.getFileName().toString());
-                    resource.setPath(item.toString());
+                    resource.setPath(itemPath);
 
                     if (Files.isDirectory(item)) {
                         resource.setType("folder");
@@ -82,13 +92,16 @@ public class ResourceController {
                         }
                     }
 
-                    resourcesMap.put(resource.getId(), resource);
+                    newResourcesMap.put(resourceId, resource);
                     System.out.println("Found: " + resource.getName() + " (" + resource.getType() + ") ID: " + resource.getId());
 
                 } catch (Exception e) {
                     System.err.println("Error processing item: " + item + " - " + e.getMessage());
                 }
             }
+
+            // Обновляем карту ресурсов
+            resourcesMap = newResourcesMap;
 
         } catch (IOException e) {
             System.err.println("Error scanning directory: " + e.getMessage());
