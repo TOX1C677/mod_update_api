@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +27,6 @@ public class FileController {
     @GetMapping("/file")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
         try {
-            // Используем правильный базовый путь
             Path basePath = Paths.get("/home/tox1c/jumpie-files");
             Path path = basePath.resolve(filePath).normalize();
 
@@ -34,7 +35,6 @@ public class FileController {
                 return ResponseEntity.badRequest().build();
             }
 
-            // Проверяем существование файла
             if (!Files.exists(path)) {
                 System.out.println("File not found: " + path);
                 return ResponseEntity.notFound().build();
@@ -51,11 +51,15 @@ public class FileController {
                 contentType = "application/octet-stream";
             }
 
-            // Для больших файлов используем потоковую передачу
+            // Кодируем имя файла для поддержки русских символов
+            String filename = resource.getFilename();
+            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+                    .replace("+", "%20");
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + resource.getFilename() + "\"")
+                            "attachment; filename=\"" + encodedFilename + "\"; filename*=utf-8''" + encodedFilename)
                     .body(resource);
 
         } catch (Exception e) {

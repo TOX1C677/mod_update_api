@@ -175,8 +175,11 @@ public class ResourceController {
 
             if (needToDownload) {
                 DownloadResponse.FileToDownload fileToDownload = new DownloadResponse.FileToDownload();
-                // Отправляем полный путь от базовой директории
-                fileToDownload.setServerPath(Paths.get(resource.getPath()).relativize(serverFile).toString());
+                // Отправляем полный путь от базовой директории сервера
+                Path serverBasePath = Paths.get(BASE_DIR);
+                String serverRelativePath = serverBasePath.relativize(serverFile).toString();
+
+                fileToDownload.setServerPath(serverRelativePath);
                 fileToDownload.setRelativePath(relativePath);
                 fileToDownload.setSize(fileSystemService.getFileSize(serverFile));
                 fileToDownload.setHash(serverFileHash);
