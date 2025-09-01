@@ -38,7 +38,7 @@ public class SecurityConfig {
                                 "/api/resources",
                                 "/api/download",
                                 "/api/debug",
-                                "/api/file"
+                                "/api/file/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

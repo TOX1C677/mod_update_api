@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,17 +25,25 @@ public class FileController {
     @GetMapping("/file")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
         try {
-            Path path = Paths.get(baseDir).resolve(filePath).normalize();
+            // Используем правильный базовый путь
+            Path basePath = Paths.get("/home/tox1c/jumpie-files");
+            Path path = basePath.resolve(filePath).normalize();
 
             // Security check: ensure the path is within the base directory
-            if (!path.startsWith(Paths.get(baseDir).normalize())) {
+            if (!path.startsWith(basePath.normalize())) {
                 return ResponseEntity.badRequest().build();
+            }
+
+            // Проверяем существование файла
+            if (!Files.exists(path)) {
+                System.out.println("File not found: " + path);
+                return ResponseEntity.notFound().build();
             }
 
             Resource resource = new UrlResource(path.toUri());
 
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.notFound().build();
+            if (!resource.isReadable()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
             String contentType = Files.probeContentType(path);
@@ -42,6 +51,7 @@ public class FileController {
                 contentType = "application/octet-stream";
             }
 
+            // Для больших файлов используем потоковую передачу
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -49,6 +59,7 @@ public class FileController {
                     .body(resource);
 
         } catch (Exception e) {
+            System.err.println("Error serving file: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

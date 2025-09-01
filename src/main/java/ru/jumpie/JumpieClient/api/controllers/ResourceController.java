@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.io.IOException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api")
@@ -149,7 +151,12 @@ public class ResourceController {
             return;
         }
 
-        List<Path> serverFiles = fileSystemService.listFilesInDirectory(resource.getPath());
+        // Рекурсивно получаем все файлы в папке
+        List<Path> serverFiles = new ArrayList<>();
+        try (Stream<Path> walk = Files.walk(basePath)) {
+            serverFiles = walk.filter(Files::isRegularFile)
+                    .collect(Collectors.toList());
+        }
 
         for (Path serverFile : serverFiles) {
             String relativePath = basePath.relativize(serverFile).toString();
@@ -168,8 +175,8 @@ public class ResourceController {
 
             if (needToDownload) {
                 DownloadResponse.FileToDownload fileToDownload = new DownloadResponse.FileToDownload();
-                // Отправляем только имя файла
-                fileToDownload.setServerPath(serverFile.getFileName().toString());
+                // Отправляем полный путь от базовой директории
+                fileToDownload.setServerPath(Paths.get(resource.getPath()).relativize(serverFile).toString());
                 fileToDownload.setRelativePath(relativePath);
                 fileToDownload.setSize(fileSystemService.getFileSize(serverFile));
                 fileToDownload.setHash(serverFileHash);
