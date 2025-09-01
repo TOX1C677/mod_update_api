@@ -2,7 +2,9 @@ package ru.jumpie.JumpieClient.api.services;
 
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -43,16 +45,29 @@ public class FileSystemService {
     public String calculateFileHash(Path filePath) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] fileBytes = Files.readAllBytes(filePath);
-            byte[] hashBytes = digest.digest(fileBytes);
 
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
+            // Используем буферизированное чтение вместо readAllBytes
+            try (InputStream is = Files.newInputStream(filePath);
+                 BufferedInputStream bis = new BufferedInputStream(is)) {
+
+                byte[] buffer = new byte[8192];
+                int count;
+
+                while ((count = bis.read(buffer)) > 0) {
+                    digest.update(buffer, 0, count);
+                }
+
+                byte[] hashBytes = digest.digest();
+
+                StringBuilder hexString = new StringBuilder();
+                for (byte b : hashBytes) {
+                    String hex = Integer.toHexString(0xff & b);
+                    if (hex.length() == 1) hexString.append('0');
+                    hexString.append(hex);
+                }
+                return hexString.toString();
             }
-            return hexString.toString();
+
         } catch (Exception e) {
             throw new IOException("Error calculating hash for file: " + filePath, e);
         }

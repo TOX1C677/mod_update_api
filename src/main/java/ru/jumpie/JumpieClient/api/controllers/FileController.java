@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,8 +28,10 @@ public class FileController {
     @GetMapping("/file")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
         try {
+            // Декодируем URL-encoded путь
+            String decodedFilePath = URLDecoder.decode(filePath, StandardCharsets.UTF_8.toString());
             Path basePath = Paths.get("/home/tox1c/jumpie-files");
-            Path path = basePath.resolve(filePath).normalize();
+            Path path = basePath.resolve(decodedFilePath).normalize();
 
             // Security check: ensure the path is within the base directory
             if (!path.startsWith(basePath.normalize())) {
@@ -53,7 +56,7 @@ public class FileController {
 
             // Кодируем имя файла для поддержки русских символов
             String filename = resource.getFilename();
-            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8.toString())
                     .replace("+", "%20");
 
             return ResponseEntity.ok()
