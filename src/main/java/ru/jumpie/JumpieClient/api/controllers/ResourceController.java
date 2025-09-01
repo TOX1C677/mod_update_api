@@ -33,6 +33,69 @@ public class ResourceController {
         return new ArrayList<>(resourcesMap.values());
     }
 
+    private void initializeResources() {
+        resourcesMap.clear();
+
+        try {
+            System.out.println("Scanning directory: " + BASE_DIR);
+            Path baseDirPath = Paths.get(BASE_DIR);
+
+            // Проверяем существование и доступность базовой директории
+            if (!Files.exists(baseDirPath)) {
+                Files.createDirectories(baseDirPath);
+                System.out.println("Created base directory: " + BASE_DIR);
+            }
+
+            // Проверяем права на чтение
+            if (!Files.isReadable(baseDirPath)) {
+                System.err.println("No read permission for directory: " + BASE_DIR);
+                createTestResources();
+                return;
+            }
+
+            // Сканируем базовую директорию
+            List<Path> items = fileSystemService.listFilesInDirectory(BASE_DIR);
+
+            for (Path item : items) {
+                try {
+                    // Проверяем доступность файла/папки
+                    if (!Files.isReadable(item)) {
+                        System.err.println("Skipping inaccessible item: " + item);
+                        continue;
+                    }
+
+                    Resource resource = new Resource();
+                    resource.setId("item_" + UUID.randomUUID().toString());
+                    resource.setName(item.getFileName().toString());
+                    resource.setPath(item.toString());
+
+                    if (Files.isDirectory(item)) {
+                        resource.setType("folder");
+                        resource.setSize(0);
+                    } else {
+                        resource.setType("file");
+                        try {
+                            resource.setSize(fileSystemService.getFileSize(item));
+                        } catch (IOException e) {
+                            System.err.println("Error getting size for: " + item + " - " + e.getMessage());
+                            resource.setSize(0);
+                        }
+                    }
+
+                    resourcesMap.put(resource.getId(), resource);
+                    System.out.println("Found: " + resource.getName() + " (" + resource.getType() + ") ID: " + resource.getId());
+
+                } catch (Exception e) {
+                    System.err.println("Error processing item: " + item + " - " + e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error scanning directory: " + e.getMessage());
+            createTestResources();
+        }
+    }
+
     @PostMapping("/download")
     public ResponseEntity<DownloadResponse> prepareDownload(@RequestBody DownloadRequest request) {
         try {
@@ -55,39 +118,6 @@ public class ResourceController {
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    private void initializeResources() {
-        resourcesMap.clear();
-
-        try {
-            System.out.println("Scanning directory: " + BASE_DIR);
-
-            // Сканируем базовую директорию
-            List<Path> items = fileSystemService.listFilesInDirectory(BASE_DIR);
-
-            for (Path item : items) {
-                Resource resource = new Resource();
-                resource.setId("item_" + UUID.randomUUID().toString());
-                resource.setName(item.getFileName().toString());
-                resource.setPath(item.toString());
-
-                if (Files.isDirectory(item)) {
-                    resource.setType("folder");
-                    resource.setSize(0);
-                } else {
-                    resource.setType("file");
-                    resource.setSize(fileSystemService.getFileSize(item));
-                }
-
-                resourcesMap.put(resource.getId(), resource);
-                System.out.println("Found: " + resource.getName() + " (" + resource.getType() + ")");
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error scanning directory: " + e.getMessage());
-            createTestResources();
         }
     }
 
