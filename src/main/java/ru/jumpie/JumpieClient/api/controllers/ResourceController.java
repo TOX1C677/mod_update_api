@@ -119,9 +119,7 @@ public class ResourceController {
     public ResponseEntity<Map<String, Object>> getVersionInfo() {
         try {
             Map<String, Object> versionInfo = new HashMap<>();
-            versionInfo.put("version", "1.1.0");
-            versionInfo.put("download_url", "http://84.21.166.182:9090/api/update");
-            versionInfo.put("release_notes", "Новая версия с автообновлением");
+            versionInfo.put("version", "1.1.0"); // Меняй эту версию
             versionInfo.put("timestamp", System.currentTimeMillis());
 
             return ResponseEntity.ok(versionInfo);
@@ -133,7 +131,6 @@ public class ResourceController {
     @GetMapping("/update")
     public ResponseEntity<UrlResource> downloadUpdate() {
         try {
-            // Путь к ZIP-архиву с обновлением
             Path updatePath = Paths.get("/home/tox1c/jumpie-client/update/jumpie-client-update.zip");
 
             if (!Files.exists(updatePath)) {
@@ -141,20 +138,9 @@ public class ResourceController {
             }
 
             UrlResource resource = new UrlResource(updatePath.toUri());
-
-            if (!resource.isReadable()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            String contentType = Files.probeContentType(updatePath);
-            if (contentType == null) {
-                contentType = "application/zip";
-            }
-
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"jumpie-client-update.zip\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"jumpie-client-update.zip\"")
                     .body(resource);
 
         } catch (Exception e) {
