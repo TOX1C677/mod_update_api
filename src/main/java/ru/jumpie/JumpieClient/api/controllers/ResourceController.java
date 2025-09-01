@@ -1,6 +1,10 @@
 package ru.jumpie.JumpieClient.api.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.jumpie.JumpieClient.api.models.DownloadRequest;
@@ -24,6 +28,8 @@ public class ResourceController {
     private final FileSystemService fileSystemService;
 
     private static final String BASE_DIR = "/home/tox1c/jumpie-files";
+    private static final String UPDATE_DIR = "/home/tox1c/jumpie-client/update";
+
     private Map<String, Resource> resourcesMap = new HashMap<>();
 
     // Добавьте это поле для стабильных ID
@@ -106,6 +112,53 @@ public class ResourceController {
         } catch (IOException e) {
             System.err.println("Error scanning directory: " + e.getMessage());
             createTestResources();
+        }
+    }
+
+    @GetMapping("/version")
+    public ResponseEntity<Map<String, Object>> getVersionInfo() {
+        try {
+            Map<String, Object> versionInfo = new HashMap<>();
+            versionInfo.put("version", "1.1.0");
+            versionInfo.put("download_url", "http://84.21.166.182:9090/api/update");
+            versionInfo.put("release_notes", "Новая версия с автообновлением");
+            versionInfo.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(versionInfo);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/update")
+    public ResponseEntity<UrlResource> downloadUpdate() {
+        try {
+            // Путь к ZIP-архиву с обновлением
+            Path updatePath = Paths.get("/home/tox1c/jumpie-client/update/jumpie-client-update.zip");
+
+            if (!Files.exists(updatePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            UrlResource resource = new UrlResource(updatePath.toUri());
+
+            if (!resource.isReadable()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            String contentType = Files.probeContentType(updatePath);
+            if (contentType == null) {
+                contentType = "application/zip";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"jumpie-client-update.zip\"")
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
