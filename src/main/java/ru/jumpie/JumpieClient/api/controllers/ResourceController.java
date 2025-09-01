@@ -159,6 +159,7 @@ public class ResourceController {
         }
 
         for (Path serverFile : serverFiles) {
+            // relativePath должен быть путем ОТНОСИТЕЛЬНО корня скачиваемой папки
             String relativePath = basePath.relativize(serverFile).toString();
             String serverFileHash = fileSystemService.calculateFileHash(serverFile);
 
@@ -175,17 +176,18 @@ public class ResourceController {
 
             if (needToDownload) {
                 DownloadResponse.FileToDownload fileToDownload = new DownloadResponse.FileToDownload();
-                // Отправляем полный путь от базовой директории сервера
-                Path serverBasePath = Paths.get(BASE_DIR);
-                String serverRelativePath = serverBasePath.relativize(serverFile).toString();
 
-                fileToDownload.setServerPath(serverRelativePath);
-                fileToDownload.setRelativePath(relativePath);
+                // serverPath должен быть полным путем от базовой директории сервера
+                Path serverBasePath = Paths.get(BASE_DIR);
+                String serverPath = serverBasePath.relativize(serverFile).toString();
+
+                fileToDownload.setServerPath(serverPath);
+                fileToDownload.setRelativePath(relativePath);  // Это важно!
                 fileToDownload.setSize(fileSystemService.getFileSize(serverFile));
                 fileToDownload.setHash(serverFileHash);
                 response.getFilesToDownload().add(fileToDownload);
 
-                System.out.println("Folder file to download: " + fileToDownload.getServerPath());
+                System.out.println("File to download - Server: " + serverPath + ", Relative: " + relativePath);
             }
         }
     }
