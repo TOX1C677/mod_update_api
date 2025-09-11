@@ -119,7 +119,7 @@ public class ResourceController {
     public ResponseEntity<Map<String, Object>> getVersionInfo() {
         try {
             Map<String, Object> versionInfo = new HashMap<>();
-            versionInfo.put("version", "1.3.0u"); // Меняй эту версию
+            versionInfo.put("version", "1.3.1"); // Меняй эту версию
             versionInfo.put("timestamp", System.currentTimeMillis());
 
             return ResponseEntity.ok(versionInfo);
